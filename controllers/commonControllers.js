@@ -1,6 +1,8 @@
 const COUNTRY = require('../models/country')
 const STATE = require('../models/states')
 const CITY  = require('../models/city')
+const USER = require('../models/user')
+const mongoose = require('mongoose')
 
 async function getCountry(req, res) {
     try {
@@ -47,6 +49,24 @@ function sendResponse(res, statusCode, message, data, error = null) {
     });
 }
 
+async function getByID(req, res) {
+    try {
+        let _id = req.query._id;
+        if (!_id) {
+            return sendResponse(res, 400, 'User ID is required', null);
+        }
+        let user = await USER.findOne({ _id: mongoose.Types.ObjectId(_id) });
+        if (!user) {
+            return sendResponse(res, 404, 'User not found', null);
+        }
+
+        return sendResponse(res, 200, 'User retrieved successfully', user);
+    } catch (err) {
+        console.error(err); 
+        return sendResponse(res, 500, 'Internal server error', null, err.message);
+    }
+}
+
 
 
 
@@ -54,5 +74,6 @@ function sendResponse(res, statusCode, message, data, error = null) {
 module.exports = {
     getCountry,
     getState,
-    getCity
+    getCity,
+    getByID
 }
