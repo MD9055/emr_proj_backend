@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user'); // assuming you have a User model
 const  Mongoose  = require('mongoose');
 const {generateJWTToken} = require('../utils/commonMethods')
-
+const { sendEmail } = require('../utils/mailer');
+process.env.NODE_ENV = process.env.NODE_ENV || "local"; //local
+const config = require("../config.js").get(process.env.NODE_ENV);
 
 
 async function login(req, res) {
@@ -75,6 +77,84 @@ async function updateProfilePassword(req, res) {
     }
 }
 
+async function forgetPassword(req, res) {
+  try {
+      let { email } = req.body;
+
+      let checkUser = await User.findOne({ email: email.toLowerCase()});
+
+      if (!checkUser) {
+          return sendResponse(res, 404, 'User not found', null);
+      }
+      let payload = {
+        _id:checkUser._id,
+        firstName: checkUser.firstName,
+        email: checkUser.email,
+        role: checkUser.role
+      }
+      let generatedPasswordToken = await generateJWTToken(payload, '1h');
+      let resetPasswordLink = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/reset-password?token=${generatedPasswordToken}`;
+
+      const emailTemplate = `
+      <p>Dear ${checkUser.firstName},</p>
+      <p>We received a request to reset your password.</p>
+      <p>Please click the button below to reset your password:</p>
+      <a href="${resetPasswordLink}" style="display: inline-block; 
+         padding: 10px 20px; 
+         font-size: 16px; 
+         color: #ffffff; 
+         background-color: #007bff; 
+         text-decoration: none; 
+         border-radius: 5px;" onclick="window.open('${resetPasswordLink}', '_blank'); return false;">Reset Password</a>
+      <p>If you did not request this change, please ignore this email.</p>
+      <p>Best regards,</p>
+      <p>Your Team</p>
+      `;
+      
+
+      await sendEmail(checkUser.email, emailTemplate); 
+
+      return sendResponse(res, 200, 'Reset password email sent', null);
+  } catch (err) {
+      console.error('Error in forgetPassword:', err);
+      return sendResponse(res, 500, 'Internal Server Error', null, err.message);
+  }
+}
+
+
+
+async function resetPassword(req, res) {
+  try {
+    let { password, confirmPassword, _id } = req.body;
+
+    if (!password || !confirmPassword) {
+      return sendResponse(res, 400, 'Password and confirm password are required');
+    }
+
+    if (password !== confirmPassword) {
+      return sendResponse(res, 400, 'Passwords do not match');
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const user = await User.findByIdAndUpdate(_id, { password: hashedPassword }, { new: true });
+
+    if (!user) {
+      return sendResponse(res, 404, 'User not found');
+    }
+
+    return sendResponse(res, 200, 'Password reset successfully', { userId: user._id });
+  } catch (err) {
+    console.error(err);
+    return sendResponse(res, 500, 'Internal Server Error', null, err.message);
+  }
+}
+
+
+
+
+
 
 function sendResponse(res, statusCode, message, data, error = null) {
   return res.status(statusCode).json({
@@ -88,5 +168,7 @@ function sendResponse(res, statusCode, message, data, error = null) {
 
 module.exports = {
   login,
-  updateProfilePassword
+  updateProfilePassword,
+  forgetPassword,
+  resetPassword
 }
