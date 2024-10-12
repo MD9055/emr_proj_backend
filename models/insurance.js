@@ -1,45 +1,42 @@
 // user.js
 
-import mongoose from 'mongoose';
-import aggregatePaginate from 'mongoose-aggregate-paginate-v2';
+const mongoose = require('mongoose');
+const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 const insuranceSchema = new mongoose.Schema({
-
-    insurance_name:{
-        type:String
+    userId: {
+        type: mongoose.Types.ObjectId,
+        ref: 'user'
     },
-    insuranceId:{
-        type:String
+    insurance_name: {
+        type: String
     },
-    medicare_number:{
-        type:String
+    insurance_number: {
+        type: String
     },
-    medicaid_number:{
-        type:String
-
+    medicare_number: {
+        type: String
     },
-    insurance_policy_number:{
-        type:String
+    medicaid_number: {
+        type: String
     },
-    social_security_number:{
-        type:String 
-
+    insurance_policy_number: {
+        type: String
     },
-    private_insurance:{
-        type:String 
+    social_security_number: {
+        type: String
+    },
+    private_insurance: {
+        type: String
     }
-
-     
-
-
-  
-},{
-    timestamps:true, versionKey:false
+}, {
+    timestamps: true,
+    versionKey: false
 });
 
 insuranceSchema.plugin(aggregatePaginate);
 
 // Create a model using the schema  
-const State = mongoose.model('insurance', insuranceSchema);
+const Insurance = mongoose.model('insurance', insuranceSchema, 'insurance');
 
-export default State;
+module.exports = Insurance;

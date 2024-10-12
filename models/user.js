@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
-
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const userSchema = new mongoose.Schema({
     firstName: {
@@ -40,11 +40,11 @@ const userSchema = new mongoose.Schema({
         ref: "country"
     },
     zip_code: {
-        type: Number,
+        type: String,
     },
 
     phone: {
-        type: Number,
+        type: String,
 
     },
 
@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: Number,
-        enum: [0, 1, 2, 3, 4, 5, 6],
+        enum: [0, 1, 2, 3, 4, 5, 6,7],
         /* 
           0: Super Admin
           1: Admin (Nursing Home)
@@ -67,10 +67,12 @@ const userSchema = new mongoose.Schema({
           4: Nurse Practitioner
           5: Patient
           6: Biller
+          7: Admin Staff
+
         */
     },
     loginOTP: {
-        type: Number,
+        type: String,
     },
     token: {
         type: String
@@ -94,8 +96,8 @@ const userSchema = new mongoose.Schema({
         type: String
     },
 
-    medical_licence_number: {
-        type: Number,
+    medical_licence_Number: {
+        type: String,
 
     },
     medical_licence_date: {
@@ -103,32 +105,37 @@ const userSchema = new mongoose.Schema({
     },
 
     dea_numnber: {
-        type: Number,
+        type: String,
     },
     dea_expiry_date: {
         type: Date
     },
     cds_numnber: {
-        type: Number,
+        type: String,
     },
     cds_expiry_date: {
         type: Date
     },
 
-    npi_number: {
-        type: Number
+    npi_String: {
+        type: String
     },
     patientId: {
-        type: Number
+        type: Number,
+        unique: true // Ensure uniqueness
     },
     doctorId: {
-        type: Number
+        type: String
     },
     dob: {
         type: Date
     },
 
     addmission_location: {
+        type: String
+    },
+
+    socian_security_String:{
         type: String
     },
 
@@ -160,7 +167,32 @@ const userSchema = new mongoose.Schema({
    created_by:{
     type:mongoose.Types.ObjectId,
     ref:'user'
+   },
+   company_details:{
+    type:mongoose.Types.ObjectId,
+    ref:'company'
+   },
+   companyFax:{
+    type:String
+   },
+   companyMobile:{
+    type:String
+   },
+   companyZipCode:{
+    type:String
+   },
+   companyAddressStreet1:{
+    type:String
+   },
+   companyAddressStreet2:{
+    type:String
+   },
+   companyName:{
+    type:String
    }
+
+
+
 
 
 
@@ -169,6 +201,9 @@ const userSchema = new mongoose.Schema({
     versionKey: false
 });
 
+
+
+userSchema.plugin(AutoIncrement, { inc_field: 'patientId', start_seq: 100 });
 userSchema.plugin(aggregatePaginate);
 const User = mongoose.model('user', userSchema);
 module.exports = User

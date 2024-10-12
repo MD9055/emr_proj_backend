@@ -1,21 +1,25 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const FunctoryFunctions = require('../middleware/factoryFunctions');
 
 const authMiddleware = async (req, res, next) => {
+  const responseHandler = new FunctoryFunctions(res); 
+
   try {
     const authorization = req.headers.authorization;
+ 
 
     if (!authorization) {
-      return res.status(401).json({ message: 'Access denied. No token provided.' });
+      return responseHandler.responseSend(401, 'Access denied. No token provided.');
     }
 
     const [, token] = authorization.split(' ');
-
+    console.log(token)
     if (!token) {
-      return res.status(401).json({ message: 'Access denied. No token provided.' });
+      return responseHandler.responseSend(401, 'Access denied. No token provided.');
     }
 
-    // Verify the token
+
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
     req.user = {
@@ -27,13 +31,13 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (err) {
     if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
+      return responseHandler.responseSend(401, 'Invalid token');
     } else if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
+      return responseHandler.responseSend(401, 'Token expired');
     }
     
-    console.log(err);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    console.error(err);
+    return responseHandler.responseSend(500, 'Internal Server Error');
   }
 };
 

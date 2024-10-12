@@ -10,6 +10,12 @@ var usersRouter = require('./routes/users');
 var superadminRouter = require('./routes/superadmin');
 var authRouter = require('./routes/auth');
 var commonRouter = require('./routes/common');
+var adminRouter = require('./routes/admin');
+var physicianRouter = require('./routes/physician');
+var staffRouter = require('./routes/staff');
+
+
+
 
 
 
@@ -32,6 +38,12 @@ app.use('/users', usersRouter);
 app.use('/superadmin', superadminRouter);
 app.use('/auth', authRouter);
 app.use('/common', commonRouter);
+app.use('/admin', adminRouter);
+app.use('/physician', physicianRouter);
+app.use('/staff', staffRouter);
+
+
+
 
 
 
