@@ -108,7 +108,7 @@ async function addUpdateAdmin(req, res) {
             `;
 
             await sendEmail(response.email, emailTemplate);
-            return responseHandler.responseSend(res, 201, "Admin added successfully", []);
+            return responseHandler.responseSend(201,"Admin added successfully", []);
         }
     } catch (error) {
         console.error(error);
