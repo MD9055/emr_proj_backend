@@ -738,7 +738,6 @@ async function addPatients(req, res) {
         role: 5,
         physicianId: req.user.userId,
         created_by: getAdminId.created_by,
-        // Only encrypt and add fields if they exist
         phone: phone ? encryptionService.encrypt(phone.toString()) : undefined,
         email: email ? encryptionService.encrypt(email) : undefined,
         address_street1: address_street1 ? encryptionService.encrypt(address_street1) : undefined,
@@ -813,6 +812,156 @@ async function addPatients(req, res) {
     }
 }
 
+async function updatePatient(req, res) {
+    const responseHandler = new FunctoryFunctions(res);
+    const encryptionService = new EncryptionService();
+
+    if (!req.user || !req.user.userId) {
+        return responseHandler.responseSend(401, 'Unauthorized: User ID not found.', null);
+    }
+    console.log(req.query)
+  
+    const physicianId = req.user.userId;
+    const patientId = req.query._id; 
+
+    let getAdminId;
+
+    try {
+        getAdminId = await USER.findById(Mongoose.Types.ObjectId(physicianId));
+        console.log(getAdminId, "getAdminId")
+        if (!getAdminId) {
+            return responseHandler.responseSend(404, 'Admin not found.', null);
+        }
+    } catch (error) {
+        console.error('Error fetching admin ID:', error);
+        return responseHandler.responseSend(500, 'Internal Server Error: Unable to fetch admin ID.', null);
+    }
+
+    const {
+        firstName,
+        lastName,
+        phone,
+        email,
+        dob,
+        address_street1,
+        address_street2,
+        zip_code,
+        medicare_number,
+        medicaid_number,
+        insurance_policy_number,
+        admission_location,
+        insurance_name,
+        ssn,
+        department,
+        address,
+        country,
+        state,
+        city,
+        kin_first_name,
+        kin_last_name,
+        kin_address_street1,
+        kin_address_street2,
+        kin_zip_code,
+        kin_cell_number,
+        kin_landline_number,
+        kin_country,
+        kin_state,
+        kin_city,
+    } = req.body;
+
+    console.log(req.body, "test")
+
+    // return
+
+    const requiredFields = [firstName, lastName, dob];
+    if (requiredFields.some(field => !field)) {
+        return responseHandler.responseSend(400, 'Bad Request: Missing required fields.', null);
+    }
+
+    const parsedDob = new Date(dob);
+    if (isNaN(parsedDob)) {
+        return responseHandler.responseSend(400, 'Bad Request: Invalid date format.', null);
+    }
+
+    const patientData = {
+        firstName: encryptionService.encrypt(firstName),
+        lastName: encryptionService.encrypt(lastName),
+        dob: parsedDob,
+        adminId: getAdminId.adminId,
+        role: 5,
+        physicianId: req.user.userId,
+        updated_by: getAdminId.created_by,
+        phone: phone ? encryptionService.encrypt(phone.toString()) : undefined,
+        email: email ? encryptionService.encrypt(email) : undefined,
+        address_street1: address_street1 ? encryptionService.encrypt(address_street1) : undefined,
+        address_street2: address_street2 ? encryptionService.encrypt(address_street2) : undefined,
+        zip_code: zip_code || undefined,
+        admission_location: admission_location || undefined,
+        department: department ? encryptionService.encrypt(department.toString()) : undefined,
+        address: address ? encryptionService.encrypt(address) : undefined,
+        country: country || undefined,
+        state: state || undefined,
+        city: city || undefined,
+    };
+
+    try {
+        const existingPatient = await USER.findById(patientId);
+        if (!existingPatient) {
+            return responseHandler.responseSend(404, 'Patient not found.', null);
+        }
+
+        Object.assign(existingPatient, patientData);
+        const updatedPatientInfo = await existingPatient.save();
+
+        let insurancePayload = {
+            userId: updatedPatientInfo._id,
+            insurance_number: insurance_policy_number ? encryptionService.encrypt(insurance_policy_number.toString()) : undefined,
+            insurance_name: insurance_name ? encryptionService.encrypt(insurance_name) : undefined,
+            medicare_number: medicare_number ? encryptionService.encrypt(medicare_number.toString()) : undefined,
+            medicaid_number: medicaid_number ? encryptionService.encrypt(medicaid_number.toString()) : undefined,
+            insurance_policy_number: insurance_policy_number ? encryptionService.encrypt(insurance_policy_number.toString()) : undefined,
+            socian_security_number: ssn ? encryptionService.encrypt(ssn.toString()) : undefined,
+        };
+
+        const kinPayload = {
+            userId: updatedPatientInfo._id,
+            firstName: kin_first_name ? encryptionService.encrypt(kin_first_name) : undefined,
+            lastName: kin_last_name ? encryptionService.encrypt(kin_last_name) : undefined,
+            kin_address_street1: kin_address_street1 ? encryptionService.encrypt(kin_address_street1) : undefined,
+            kin_address_street2: kin_address_street2 ? encryptionService.encrypt(kin_address_street2) : undefined,
+            zip_code: kin_zip_code ? encryptionService.encrypt(kin_zip_code) : undefined,
+            cell_number: kin_cell_number ? encryptionService.encrypt(kin_cell_number.toString()) : undefined,
+            landline_number: kin_landline_number ? encryptionService.encrypt(kin_landline_number.toString()) : undefined,
+            country: kin_country || undefined,
+            state: kin_state || undefined,
+            city: kin_city || undefined,
+        };
+
+        
+        try {
+            const kinInfo = await KinSchema.findOneAndUpdate(
+                { userId: updatedPatientInfo._id },
+                kinPayload,
+                { new: true, upsert: true }
+            );
+            const saveInsurance = await InsuranceSchema.findOneAndUpdate(
+                { userId: updatedPatientInfo._id },
+                insurancePayload,
+                { new: true, upsert: true }
+            );
+
+            return responseHandler.responseSend(200, 'Patient updated successfully.', []);
+        } catch (kinError) {
+            console.error('Kin information update error:', kinError);
+            return responseHandler.responseSend(500, 'Failed to update kin information.', null);
+        }
+    } catch (error) {
+        console.log('Error during update:', error);
+        return responseHandler.responseSend(500, 'Internal Server Error: An error occurred while processing your request.', null);
+    }
+}
+
+
 
 
 
@@ -822,7 +971,8 @@ async function addPatients(req, res) {
 module.exports = {
     addUpdatePatients,
     listPatients,
-    addPatients
+    addPatients,
+    updatePatient
   
     
 };
