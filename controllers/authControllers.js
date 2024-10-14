@@ -108,7 +108,9 @@ async function forgetPassword(req, res) {
         };
 
         let generatedPasswordToken = await generateJWTToken(payload, '1h');
-        let resetPasswordLink = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/reset-password?token=${generatedPasswordToken}`;
+       // let resetPasswordLink = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/reset-password?token=${generatedPasswordToken}`;
+      let resetPasswordLink = `https://emr-angular-project.vercel.app/reset-password?token=${generatedPasswordToken}`
+
 
         const emailTemplate = `
             <p>Dear ${checkUser.firstName},</p>

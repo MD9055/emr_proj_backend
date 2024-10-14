@@ -77,7 +77,8 @@ async function addUpdatePhyscians(req, res) {
             };
 
             let generateToken = await generateJWTToken(payload, "2h");
-            let setUpProfileLine = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/setup-profile?token=${generateToken}`;
+            // let setUpProfileLine = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/setup-profile?token=${generateToken}`;
+            let setUpProfileLine = `https://emr-angular-project.vercel.app/setup-profile?token=${generateToken}`
 
             const emailTemplate = `
                 <p>Dear ${firstName},</p>
@@ -229,7 +230,9 @@ async function addAdminStaff(req, res) {
         };
 
         let generateToken = await generateJWTToken(payload, "2h");
-        let setUpProfileLine = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/setup-profile?token=${generateToken}`;
+        // let setUpProfileLine = `${config.FRONTEND.HOST}:${config.FRONTEND.PORT}/setup-profile?token=${generateToken}`;
+        let setUpProfileLine = `https://emr-angular-project.vercel.app/setup-profile?token=${generateToken}`
+
 
         const emailTemplate = `
             <p>Dear ${firstName},</p>
